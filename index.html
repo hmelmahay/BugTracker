@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bug Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <h1>Bug Tracker</h1>
+      <p class="subtitle" id="syncStatus">Connecting…</p>
+    </div>
+    <div class="topbar-right">
+      <span id="userLabel" class="user-label"></span>
+      <button id="signOutBtn" class="btn btn-outline">Sign Out</button>
+    </div>
+  </header>
+
+  <!-- Add Bug form -->
+  <div class="form-bar" id="formBar">
+    <div class="form-bar-title">Report a Bug</div>
+    <div class="form-row">
+      <input id="bugTitle" type="text" placeholder="Bug title" class="form-input flex-3" />
+      <select id="bugSeverity" class="form-select">
+        <option value="Critical">Critical</option>
+        <option value="High">High</option>
+        <option value="Medium" selected>Medium</option>
+        <option value="Low">Low</option>
+      </select>
+      <select id="bugAssignedTo" class="form-select">
+        <option value="">Unassigned</option>
+      </select>
+      <select id="bugStatus" class="form-select">
+        <option value="open">Open</option>
+        <option value="in-progress">In Progress</option>
+        <option value="in-review">In Review</option>
+        <option value="closed">Closed</option>
+      </select>
+      <button id="addBugBtn" class="btn btn-primary">Add Bug</button>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <input id="searchInput" type="text" placeholder="Search bugs…" class="form-input search-input" />
+    <select id="severityFilter" class="form-select">
+      <option value="">All Severities</option>
+      <option value="Critical">Critical</option>
+      <option value="High">High</option>
+      <option value="Medium">Medium</option>
+      <option value="Low">Low</option>
+    </select>
+    <select id="assigneeFilter" class="form-select">
+      <option value="">All Assignees</option>
+    </select>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Total</div>
+      <div class="stat-value" id="statTotal">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Open</div>
+      <div class="stat-value" id="statOpen">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">In Progress</div>
+      <div class="stat-value" id="statInProgress">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Closed</div>
+      <div class="stat-value" id="statClosed">0</div>
+    </div>
+  </div>
+
+  <!-- Board columns -->
+  <main class="board" id="board">
+    <div class="column" data-status="open">
+      <div class="column-header">
+        <span class="column-title">Open</span>
+        <span class="count" id="count-open">0</span>
+      </div>
+      <div class="column-body" id="col-open"></div>
+    </div>
+    <div class="column" data-status="in-progress">
+      <div class="column-header">
+        <span class="column-title">In Progress</span>
+        <span class="count" id="count-in-progress">0</span>
+      </div>
+      <div class="column-body" id="col-in-progress"></div>
+    </div>
+    <div class="column" data-status="in-review">
+      <div class="column-header">
+        <span class="column-title">In Review</span>
+        <span class="count" id="count-in-review">0</span>
+      </div>
+      <div class="column-body" id="col-in-review"></div>
+    </div>
+    <div class="column" data-status="closed">
+      <div class="column-header">
+        <span class="column-title">Closed</span>
+        <span class="count" id="count-closed">0</span>
+      </div>
+      <div class="column-body" id="col-closed"></div>
+    </div>
+  </main>
+
+  <!-- Edit Bug Modal -->
+  <div class="modal-backdrop" id="editModalBackdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+      <div class="modal-header">
+        <h2 id="editModalTitle">Edit Bug</h2>
+        <button class="modal-close" id="editModalCloseBtn">&times;</button>
+      </div>
+      <div class="form-grid">
+        <div class="field field-wide">
+          <label for="editTitle">Bug title *</label>
+          <input id="editTitle" type="text" />
+        </div>
+        <div class="field">
+          <label for="editSeverity">Severity</label>
+          <select id="editSeverity">
+            <option value="Critical">Critical</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="editStatus">Status</label>
+          <select id="editStatus">
+            <option value="open">Open</option>
+            <option value="in-progress">In Progress</option>
+            <option value="in-review">In Review</option>
+            <option value="closed">Closed</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="editAssignedTo">Assigned To</label>
+          <select id="editAssignedTo">
+            <option value="">Unassigned</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="editReporter">Reporter</label>
+          <input id="editReporter" type="text" placeholder="Who reported this?" />
+        </div>
+        <div class="field field-wide">
+          <label for="editSteps">Steps to Reproduce</label>
+          <textarea id="editSteps" rows="4" placeholder="1. Go to…&#10;2. Click…&#10;3. Observe…"></textarea>
+        </div>
+        <div class="field field-wide">
+          <label for="editNotes">Notes</label>
+          <textarea id="editNotes" rows="3" placeholder="Additional context, links, screenshots…"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button id="editCancelBtn" class="btn btn-outline">Cancel</button>
+        <button id="editSaveBtn" class="btn btn-primary">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Login overlay -->
+  <div id="loginOverlay">
+    <div id="loginCard">
+      <h2>Bug Tracker</h2>
+      <p id="loginError" class="login-error" style="display:none"></p>
+      <div class="login-field">
+        <label for="loginEmail">Email</label>
+        <input id="loginEmail" type="email" autocomplete="email" placeholder="you@example.com" />
+      </div>
+      <div class="login-field">
+        <label for="loginPassword">Password</label>
+        <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password" />
+      </div>
+      <button id="loginBtn" class="btn btn-primary" style="width:100%">Sign In</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="script.js"></script>
+</body>
+</html>
