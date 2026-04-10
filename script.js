@@ -163,9 +163,11 @@ const SEVERITY_CLASS = {
 function filteredBugs() {
   const q        = document.getElementById('searchInput').value.toLowerCase();
   const severity = document.getElementById('severityFilter').value;
+  const category = document.getElementById('categoryFilter').value;
   const assignee = document.getElementById('assigneeFilter').value;
   return bugs.filter(b => {
     if (severity && b.severity !== severity) return false;
+    if (category && (b.category || '') !== category) return false;
     if (assignee && b.assigned_to !== assignee) return false;
     if (q && !b.title.toLowerCase().includes(q) &&
              !(b.notes || '').toLowerCase().includes(q) &&
@@ -202,6 +204,9 @@ function renderAll() {
 }
 
 function bugCard(b) {
+  const categoryLabel = b.category
+    ? `<span class="badge badge-category">${escHtml(b.category)}</span>`
+    : '';
   const assignedLabel = b.assigned_to
     ? `<span class="badge badge-assignee">${escHtml(b.assigned_to)}</span>`
     : `<span class="badge badge-unassigned">Unassigned</span>`;
@@ -212,6 +217,7 @@ function bugCard(b) {
     <div class="bug-card" draggable="true" data-id="${escHtml(b.id)}">
       <div class="bug-title">${escHtml(b.title)}</div>
       <div class="bug-meta">
+        ${categoryLabel}
         <span class="badge ${SEVERITY_CLASS[b.severity] || 'severity-medium'}">${escHtml(b.severity)}</span>
         ${assignedLabel}
         ${reporterLabel}
@@ -243,6 +249,7 @@ document.getElementById('addBugBtn').addEventListener('click', async () => {
   const bug = {
     id:          uid(),
     title,
+    category:    document.getElementById('bugCategory').value,
     severity:    document.getElementById('bugSeverity').value,
     status:      document.getElementById('bugStatus').value,
     assigned_to: document.getElementById('bugAssignedTo').value,
@@ -255,8 +262,9 @@ document.getElementById('addBugBtn').addEventListener('click', async () => {
   await addBug(bug);
 
   document.getElementById('bugTitle').value = '';
-  document.getElementById('bugSeverity').value = 'Medium';
-  document.getElementById('bugStatus').value   = 'open';
+  document.getElementById('bugCategory').value  = '';
+  document.getElementById('bugSeverity').value  = 'Medium';
+  document.getElementById('bugStatus').value    = 'open';
   document.getElementById('bugAssignedTo').value = '';
   document.getElementById('bugTitle').focus();
 });
@@ -269,6 +277,7 @@ document.getElementById('bugTitle').addEventListener('keydown', e => {
 
 document.getElementById('searchInput').addEventListener('input', renderAll);
 document.getElementById('severityFilter').addEventListener('change', renderAll);
+document.getElementById('categoryFilter').addEventListener('change', renderAll);
 document.getElementById('assigneeFilter').addEventListener('change', renderAll);
 
 // ── Drag & drop ───────────────────────────────────────────────────────────────
@@ -308,6 +317,7 @@ function openEditModal(id) {
   if (!b) return;
   editingBugId = id;
   document.getElementById('editTitle').value      = b.title;
+  document.getElementById('editCategory').value   = b.category || '';
   document.getElementById('editSeverity').value   = b.severity;
   document.getElementById('editStatus').value     = b.status;
   document.getElementById('editAssignedTo').value = b.assigned_to || '';
@@ -335,6 +345,7 @@ document.getElementById('editSaveBtn').addEventListener('click', async () => {
   if (!title) { document.getElementById('editTitle').focus(); return; }
   await updateBug(editingBugId, {
     title,
+    category:    document.getElementById('editCategory').value,
     severity:    document.getElementById('editSeverity').value,
     status:      document.getElementById('editStatus').value,
     assigned_to: document.getElementById('editAssignedTo').value,

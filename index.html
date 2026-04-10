@@ -25,6 +25,19 @@
     <div class="form-bar-title">Report a Bug</div>
     <div class="form-row">
       <input id="bugTitle" type="text" placeholder="Bug title" class="form-input flex-3" />
+      <select id="bugCategory" class="form-select">
+        <option value="">No Category</option>
+        <option value="Home">Home</option>
+        <option value="Social">Social</option>
+        <option value="Bets">Bets</option>
+        <option value="Live Games">Live Games</option>
+        <option value="Profile">Profile</option>
+        <option value="Settings">Settings</option>
+        <option value="Notifications">Notifications</option>
+        <option value="Navigation">Navigation</option>
+        <option value="Auth/Login">Auth/Login</option>
+        <option value="Other">Other</option>
+      </select>
       <select id="bugSeverity" class="form-select">
         <option value="Critical">Critical</option>
         <option value="High">High</option>
@@ -53,6 +66,19 @@
       <option value="High">High</option>
       <option value="Medium">Medium</option>
       <option value="Low">Low</option>
+    </select>
+    <select id="categoryFilter" class="form-select">
+      <option value="">All Categories</option>
+      <option value="Home">Home</option>
+      <option value="Social">Social</option>
+      <option value="Bets">Bets</option>
+      <option value="Live Games">Live Games</option>
+      <option value="Profile">Profile</option>
+      <option value="Settings">Settings</option>
+      <option value="Notifications">Notifications</option>
+      <option value="Navigation">Navigation</option>
+      <option value="Auth/Login">Auth/Login</option>
+      <option value="Other">Other</option>
     </select>
     <select id="assigneeFilter" class="form-select">
       <option value="">All Assignees</option>
@@ -108,6 +134,22 @@
         <div class="field field-wide">
           <label for="editTitle">Bug title *</label>
           <input id="editTitle" type="text" />
+        </div>
+        <div class="field">
+          <label for="editCategory">Category</label>
+          <select id="editCategory">
+            <option value="">No Category</option>
+            <option value="Home">Home</option>
+            <option value="Social">Social</option>
+            <option value="Bets">Bets</option>
+            <option value="Live Games">Live Games</option>
+            <option value="Profile">Profile</option>
+            <option value="Settings">Settings</option>
+            <option value="Notifications">Notifications</option>
+            <option value="Navigation">Navigation</option>
+            <option value="Auth/Login">Auth/Login</option>
+            <option value="Other">Other</option>
+          </select>
         </div>
         <div class="field">
           <label for="editSeverity">Severity</label>

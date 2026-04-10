@@ -270,6 +270,7 @@ body {
 .severity-low       { background: #1a2535; color: #60a5fa; }
 
 /* Other badges */
+.badge-category   { background: #2d1e40; color: #c4b5fd; }
 .badge-assignee   { background: #1e2d40; color: #7dd3fc; }
 .badge-unassigned { background: var(--surface); color: var(--muted); }
 .badge-reporter   { background: #1e2a20; color: #86efac; }
