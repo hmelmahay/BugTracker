@@ -185,7 +185,15 @@
         </div>
         <div class="field field-wide">
           <label for="editNotes">Notes</label>
-          <textarea id="editNotes" rows="3" placeholder="Additional context, links, screenshots…"></textarea>
+          <textarea id="editNotes" rows="3" placeholder="Additional context, links, screenshots… (paste images here)"></textarea>
+        </div>
+        <div class="field field-wide">
+          <label>Screenshots / Attachments</label>
+          <div class="attachments-controls">
+            <input id="editAttachmentInput" type="file" accept="image/*" multiple />
+            <span class="attachments-hint">or paste an image into the Notes field</span>
+          </div>
+          <div id="editAttachmentsList" class="attachments-list"></div>
         </div>
       </div>
       <div class="form-actions">

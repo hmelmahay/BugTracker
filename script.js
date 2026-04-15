@@ -224,6 +224,7 @@ function bugCard(b) {
       </div>
       ${b.steps ? `<div class="bug-steps">${escHtml(b.steps)}</div>` : ''}
       ${b.notes ? `<div class="bug-notes">${escHtml(b.notes)}</div>` : ''}
+      ${(b.attachments && b.attachments.length) ? `<div class="bug-attachments">${b.attachments.map(u => `<img src="${escHtml(u)}" alt="attachment" />`).join('')}</div>` : ''}
       <div class="bug-actions">
         <button class="btn btn-icon edit-btn" data-id="${escHtml(b.id)}" title="Edit">&#9998;</button>
         <button class="btn btn-icon-danger delete-btn" data-id="${escHtml(b.id)}" title="Delete">&#10005;</button>
@@ -311,11 +312,13 @@ document.querySelectorAll('.column').forEach(col => {
 // ── Edit Modal ────────────────────────────────────────────────────────────────
 
 let editingBugId = null;
+let editingAttachments = [];
 
 function openEditModal(id) {
   const b = bugs.find(b => b.id === id);
   if (!b) return;
   editingBugId = id;
+  editingAttachments = Array.isArray(b.attachments) ? [...b.attachments] : [];
   document.getElementById('editTitle').value      = b.title;
   document.getElementById('editCategory').value   = b.category || '';
   document.getElementById('editSeverity').value   = b.severity;
@@ -324,9 +327,86 @@ function openEditModal(id) {
   document.getElementById('editReporter').value   = b.reporter   || '';
   document.getElementById('editSteps').value      = b.steps      || '';
   document.getElementById('editNotes').value      = b.notes      || '';
+  document.getElementById('editAttachmentInput').value = '';
+  renderEditAttachments();
   document.getElementById('editModalBackdrop').classList.add('open');
   document.getElementById('editTitle').focus();
 }
+
+function renderEditAttachments(extraHtml = '') {
+  const list = document.getElementById('editAttachmentsList');
+  const thumbs = editingAttachments.map((url, i) => `
+    <div class="attachment-thumb">
+      <img src="${escHtml(url)}" alt="attachment" data-full="${escHtml(url)}" />
+      <button type="button" class="attachment-remove" data-idx="${i}" title="Remove">&times;</button>
+    </div>`).join('');
+  list.innerHTML = thumbs + extraHtml;
+}
+
+async function uploadAttachmentFile(file) {
+  if (!file || !file.type.startsWith('image/')) return null;
+  const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
+  const path = `${editingBugId || 'new'}/${Date.now()}-${uid()}.${ext}`;
+  const { error } = await db.storage.from('bug-attachments').upload(path, file, {
+    contentType: file.type,
+    upsert: false,
+  });
+  if (error) { alert('Upload failed: ' + error.message); return null; }
+  const { data } = db.storage.from('bug-attachments').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+async function handleAttachmentFiles(files) {
+  const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+  if (imageFiles.length === 0) return;
+  // Show placeholder thumbs while uploading
+  const placeholders = imageFiles.map(() => `<div class="attachment-uploading">Uploading…</div>`).join('');
+  renderEditAttachments(placeholders);
+  const urls = await Promise.all(imageFiles.map(uploadAttachmentFile));
+  urls.filter(Boolean).forEach(u => editingAttachments.push(u));
+  renderEditAttachments();
+}
+
+document.getElementById('editAttachmentInput').addEventListener('change', async e => {
+  await handleAttachmentFiles(e.target.files);
+  e.target.value = '';
+});
+
+document.getElementById('editModalBackdrop').addEventListener('paste', async e => {
+  if (!editingBugId) return;
+  const cd = e.clipboardData;
+  if (!cd) return;
+  const files = [];
+  // Prefer .files (more reliable in modern browsers)
+  for (const f of (cd.files || [])) {
+    if (f.type.startsWith('image/')) files.push(f);
+  }
+  // Fallback to .items
+  if (files.length === 0) {
+    for (const it of (cd.items || [])) {
+      if (it.kind === 'file' && it.type.startsWith('image/')) {
+        const f = it.getAsFile();
+        if (f) files.push(f);
+      }
+    }
+  }
+  if (files.length) {
+    e.preventDefault();
+    await handleAttachmentFiles(files);
+  }
+});
+
+document.getElementById('editAttachmentsList').addEventListener('click', e => {
+  const removeBtn = e.target.closest('.attachment-remove');
+  if (removeBtn) {
+    const idx = parseInt(removeBtn.dataset.idx, 10);
+    editingAttachments.splice(idx, 1);
+    renderEditAttachments();
+    return;
+  }
+  const img = e.target.closest('img[data-full]');
+  if (img) window.open(img.dataset.full, '_blank');
+});
 
 function closeEditModal() {
   document.getElementById('editModalBackdrop').classList.remove('open');
@@ -352,6 +432,7 @@ document.getElementById('editSaveBtn').addEventListener('click', async () => {
     reporter:    document.getElementById('editReporter').value.trim(),
     steps:       document.getElementById('editSteps').value.trim(),
     notes:       document.getElementById('editNotes').value.trim(),
+    attachments: editingAttachments,
   });
   closeEditModal();
 });
