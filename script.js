@@ -9,7 +9,7 @@ let bugs        = [];
 let teamMembers = [];
 let currentUser = null;
 
-const STATUSES = ['open', 'in-progress', 'in-review', 'closed'];
+const STATUSES = ['open', 'in-progress', 'in-review', 'review-after-deployment', 'closed'];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
