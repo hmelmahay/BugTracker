@@ -2,7 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Bug Tracker" />
+  <meta name="theme-color" content="#0d1117" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <title>Stevo Bug Tracker</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -22,7 +28,10 @@
 
   <!-- Add Bug form -->
   <div class="form-bar" id="formBar">
-    <div class="form-bar-title">Report a Bug</div>
+    <button type="button" class="form-bar-header" id="formToggle">
+      <span class="form-bar-title">Report a Bug</span>
+      <span class="form-toggle-icon">&#9662;</span>
+    </button>
     <div class="form-row">
       <input id="bugTitle" type="text" placeholder="Bug title" class="form-input flex-3" />
       <select id="bugCategory" class="form-select">
@@ -48,13 +57,23 @@
         <option value="">Unassigned</option>
       </select>
       <select id="bugStatus" class="form-select">
-        <option value="open">Open</option>
+        <option value="open">Bugs</option>
+        <option value="features-open">Features</option>
+        <option value="questions">Questions</option>
         <option value="in-progress">In Progress</option>
-        <option value="in-review">In Review</option>
-        <option value="review-after-deployment">Review After Deployment</option>
+        <option value="in-review">Review</option>
         <option value="closed">Closed</option>
       </select>
       <button id="addBugBtn" class="btn btn-primary">Add Bug</button>
+    </div>
+    <div class="form-attach-row">
+      <label class="btn btn-outline attach-label">
+        &#128247; Add screenshots
+        <input id="newBugAttachmentInput" type="file" accept="image/*" multiple style="display:none" />
+      </label>
+      <button type="button" id="newBugPasteBtn" class="btn btn-outline attach-label">&#128203; Paste</button>
+      <span class="attachments-hint" id="newBugAttachHint">from Photos, or paste a copied screenshot</span>
+      <div id="newBugAttachmentsList" class="attachments-list"></div>
     </div>
   </div>
 
@@ -86,20 +105,46 @@
     </select>
     <div class="stats-inline">
       <span class="stat-chip"><span class="stat-chip-label">Total</span> <span class="stat-chip-value" id="statTotal">0</span></span>
-      <span class="stat-chip"><span class="stat-chip-label">Open</span> <span class="stat-chip-value" id="statOpen">0</span></span>
+      <span class="stat-chip"><span class="stat-chip-label">Bugs</span> <span class="stat-chip-value" id="statOpen">0</span></span>
+      <span class="stat-chip"><span class="stat-chip-label">Features</span> <span class="stat-chip-value" id="statFeaturesOpen">0</span></span>
+      <span class="stat-chip"><span class="stat-chip-label">Questions</span> <span class="stat-chip-value" id="statQuestions">0</span></span>
       <span class="stat-chip"><span class="stat-chip-label">In Progress</span> <span class="stat-chip-value" id="statInProgress">0</span></span>
       <span class="stat-chip"><span class="stat-chip-label">Closed</span> <span class="stat-chip-value" id="statClosed">0</span></span>
     </div>
   </div>
 
+  <!-- Mobile status tabs -->
+  <nav class="mobile-tabs" id="mobileTabs">
+    <button class="mobile-tab active" data-status="open">Bugs <span class="tab-count" id="tab-count-open">0</span></button>
+    <button class="mobile-tab" data-status="features-open">Features <span class="tab-count" id="tab-count-features-open">0</span></button>
+    <button class="mobile-tab" data-status="questions">Questions <span class="tab-count" id="tab-count-questions">0</span></button>
+    <button class="mobile-tab" data-status="in-progress">In Progress <span class="tab-count" id="tab-count-in-progress">0</span></button>
+    <button class="mobile-tab" data-status="in-review">Review <span class="tab-count" id="tab-count-in-review">0</span></button>
+    <button class="mobile-tab" data-status="closed">Closed <span class="tab-count" id="tab-count-closed">0</span></button>
+  </nav>
+
   <!-- Board columns -->
   <main class="board" id="board">
-    <div class="column" data-status="open">
+    <div class="column mobile-active" data-status="open">
       <div class="column-header">
-        <span class="column-title">Open</span>
+        <span class="column-title">Bugs</span>
         <span class="count" id="count-open">0</span>
       </div>
       <div class="column-body" id="col-open"></div>
+    </div>
+    <div class="column" data-status="features-open">
+      <div class="column-header">
+        <span class="column-title">Features</span>
+        <span class="count" id="count-features-open">0</span>
+      </div>
+      <div class="column-body" id="col-features-open"></div>
+    </div>
+    <div class="column" data-status="questions">
+      <div class="column-header">
+        <span class="column-title">Questions</span>
+        <span class="count" id="count-questions">0</span>
+      </div>
+      <div class="column-body" id="col-questions"></div>
     </div>
     <div class="column" data-status="in-progress">
       <div class="column-header">
@@ -110,17 +155,10 @@
     </div>
     <div class="column" data-status="in-review">
       <div class="column-header">
-        <span class="column-title">In Review</span>
+        <span class="column-title">Review</span>
         <span class="count" id="count-in-review">0</span>
       </div>
       <div class="column-body" id="col-in-review"></div>
-    </div>
-    <div class="column" data-status="review-after-deployment">
-      <div class="column-header">
-        <span class="column-title">Review After Deployment</span>
-        <span class="count" id="count-review-after-deployment">0</span>
-      </div>
-      <div class="column-body" id="col-review-after-deployment"></div>
     </div>
     <div class="column" data-status="closed">
       <div class="column-header">
@@ -171,10 +209,11 @@
         <div class="field">
           <label for="editStatus">Status</label>
           <select id="editStatus">
-            <option value="open">Open</option>
+            <option value="open">Bugs</option>
+            <option value="features-open">Features</option>
+            <option value="questions">Questions</option>
             <option value="in-progress">In Progress</option>
-            <option value="in-review">In Review</option>
-            <option value="review-after-deployment">Review After Deployment</option>
+            <option value="in-review">Review</option>
             <option value="closed">Closed</option>
           </select>
         </div>
@@ -197,10 +236,30 @@
           <textarea id="editNotes" rows="3" placeholder="Additional context, links, screenshots… (paste images here)"></textarea>
         </div>
         <div class="field field-wide">
+          <label for="editQuestion">Question</label>
+          <textarea id="editQuestion" rows="2" placeholder="What needs answering? (shown in the Questions column)"></textarea>
+        </div>
+        <div class="field field-wide">
+          <label for="editAnswer">Answer</label>
+          <textarea id="editAnswer" rows="2" placeholder="The answer"></textarea>
+        </div>
+        <div class="field field-wide">
+          <label for="editWhatWasDone">What was done</label>
+          <textarea id="editWhatWasDone" rows="3" placeholder="Describe the work (shown in Review)"></textarea>
+        </div>
+        <div class="field field-wide">
+          <label for="editHowToTest">How to test</label>
+          <textarea id="editHowToTest" rows="3" placeholder="1. Go to…&#10;2. Verify…"></textarea>
+        </div>
+        <div class="field field-wide">
+          <label for="editFeedback">Feedback</label>
+          <textarea id="editFeedback" rows="2" placeholder="What needs to be different (when sending back from Review)"></textarea>
+        </div>
+        <div class="field field-wide">
           <label>Screenshots / Attachments</label>
           <div class="attachments-controls">
             <input id="editAttachmentInput" type="file" accept="image/*" multiple />
-            <span class="attachments-hint">or paste an image into the Notes field</span>
+            <button type="button" id="editPasteBtn" class="btn btn-outline">&#128203; Paste</button>
           </div>
           <div id="editAttachmentsList" class="attachments-list"></div>
         </div>

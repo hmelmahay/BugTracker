@@ -25,8 +25,10 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   font-size: 14px;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* ── Topbar ── */
@@ -68,6 +70,20 @@ body {
   flex-shrink: 0;
 }
 
+.form-bar-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: default;
+  color: inherit;
+  font: inherit;
+}
+
 .form-bar-title {
   font-weight: 700;
   font-size: 13px;
@@ -76,6 +92,8 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+
+.form-toggle-icon { display: none; }
 
 .form-row {
   display: flex;
@@ -118,6 +136,15 @@ body {
 }
 
 .flex-3 { flex: 3; min-width: 180px; }
+
+.form-attach-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.attach-label { cursor: pointer; }
 
 /* ── Toolbar ── */
 .toolbar {
@@ -164,11 +191,15 @@ body {
   color: var(--text);
 }
 
+/* ── Mobile status tabs (hidden on desktop) ── */
+.mobile-tabs { display: none; }
+.card-status-select { display: none; }
+
 /* ── Board ── */
 .board {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 10px;
   padding: 10px 16px 12px;
   overflow: hidden;
@@ -235,6 +266,10 @@ body {
   padding: 10px;
   cursor: grab;
   flex-shrink: 0;
+  /* Make double-tap fire dblclick on iOS (no zoom) and keep it from selecting text */
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .bug-card:active { cursor: grabbing; }
@@ -286,6 +321,43 @@ body {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
 }
+
+/* Workflow field sections on cards */
+.bug-section {
+  margin-bottom: 6px;
+  padding: 6px 8px;
+  background: var(--bg);
+  border-radius: 6px;
+  border-left: 3px solid var(--border2);
+}
+.bug-section-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+.bug-section-text {
+  font-size: 12px;
+  color: var(--text);
+  white-space: pre-wrap;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+.section-question      { border-left-color: #a78bfa; }
+.section-question      .bug-section-label { color: #c4b5fd; }
+.section-answer        { border-left-color: #4ade80; }
+.section-answer        .bug-section-label { color: #86efac; }
+.section-what_was_done { border-left-color: #38bdf8; }
+.section-what_was_done .bug-section-label { color: #7dd3fc; }
+.section-how_to_test   { border-left-color: #fbbf24; }
+.section-how_to_test   .bug-section-label { color: #fcd34d; }
+.section-feedback      { border-left-color: #f87171; }
+.section-feedback      .bug-section-label { color: #fca5a5; }
 
 .bug-actions {
   display: flex;
@@ -472,17 +544,156 @@ body {
 .login-error { color: var(--danger); font-size: 13px; }
 
 /* ── Responsive ── */
-@media (max-width: 900px) {
-  .board { grid-template-columns: repeat(2, 1fr); }
+
+/* Tablet: keep all 6 columns, let the board scroll sideways */
+@media (min-width: 821px) and (max-width: 1200px) {
+  .board {
+    grid-template-columns: repeat(6, minmax(210px, 1fr));
+    overflow-x: auto;
+  }
 }
-@media (max-width: 600px) {
-  body { height: auto; overflow: auto; }
-  .board { grid-template-columns: 1fr; overflow: visible; }
-  .column { overflow: visible; }
-  .column-body { overflow: visible; max-height: none; }
-  .stats-inline { flex-wrap: wrap; }
-  .form-row { flex-wrap: wrap; }
-  .topbar { flex-wrap: wrap; }
+
+/* Phone: app-style single-column view with status tabs */
+@media (max-width: 820px) {
+
+  /* Safe areas for home-screen (standalone) mode */
+  .topbar {
+    padding: calc(8px + env(safe-area-inset-top)) 14px 8px;
+  }
+
+  /* Collapsible Report-a-Bug form */
+  .form-bar { padding: 10px 14px; }
+  .form-bar-header { cursor: pointer; justify-content: space-between; padding: 2px 0; }
+  .form-bar-title { margin-bottom: 0; font-size: 14px; color: var(--text); }
+  .form-toggle-icon {
+    display: block;
+    color: var(--muted);
+    font-size: 16px;
+    transition: transform 0.2s;
+  }
+  .form-bar.open .form-toggle-icon { transform: rotate(180deg); }
+  .form-bar .form-row { display: none; }
+  .form-bar.open .form-row {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    margin-top: 10px;
+    overflow: visible;
+  }
+  .form-bar .form-attach-row { display: none; }
+  .form-bar.open .form-attach-row { display: flex; margin-top: 10px; }
+  .attach-label { width: 100%; justify-content: center; text-align: center; }
+
+  /* 16px inputs stop iOS zooming in on focus; bigger touch targets */
+  .form-input, .form-select {
+    font-size: 16px;
+    padding: 12px;
+    width: 100%;
+  }
+  .btn { padding: 12px 16px; font-size: 15px; }
+  .btn-icon, .btn-icon-danger { font-size: 17px; padding: 10px 14px; }
+
+  /* Toolbar: search + filters stack, stat chips hidden (tabs show counts) */
+  .toolbar { flex-wrap: wrap; padding: 8px 14px; gap: 6px; }
+  .search-input { flex: 1 1 100%; max-width: none; }
+  .toolbar .form-select { flex: 1; width: auto; min-width: 0; font-size: 14px; padding: 10px 8px; }
+  .stats-inline { display: none; }
+
+  /* Status tab bar */
+  .mobile-tabs {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 8px 14px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .mobile-tabs::-webkit-scrollbar { display: none; }
+  .mobile-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 9px 14px;
+    border-radius: 999px;
+    background: var(--surface2);
+    color: var(--muted);
+    border: 1px solid var(--border2);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .mobile-tab.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+  }
+  .tab-count {
+    background: rgba(255,255,255,0.14);
+    border-radius: 999px;
+    padding: 1px 7px;
+    font-size: 12px;
+  }
+  .mobile-tab:not(.active) .tab-count { background: var(--border); color: var(--muted); }
+
+  /* Board: show only the active status column */
+  .board { display: block; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); }
+  .column { display: none; height: 100%; border: none; background: transparent; }
+  .column.mobile-active { display: flex; }
+  .column-header { display: none; }
+  .column-body { padding: 0 0 32px; gap: 10px; }
+
+  /* Cards: larger text, roomier targets, status dropdown for moving */
+  .bug-card { padding: 14px; border-color: var(--border2); }
+  .bug-title { font-size: 16px; }
+  .bug-steps, .bug-notes { font-size: 14px; }
+  .bug-section-text { font-size: 13px; }
+  .bug-section-label { font-size: 11px; }
+  .badge { font-size: 12px; padding: 4px 10px; }
+  .bug-actions { align-items: center; gap: 8px; }
+  .card-status-select {
+    display: block;
+    flex: 1;
+    min-width: 0;
+    margin-right: auto;
+    font: inherit;
+    font-size: 14px;
+    padding: 9px 10px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+  }
+
+  /* Edit modal: full-screen sheet */
+  .modal-backdrop.open { align-items: stretch; justify-content: stretch; }
+  .modal {
+    max-width: none;
+    max-height: none;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    border-radius: 0;
+    border: none;
+    padding: calc(16px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+  }
+  .form-grid { grid-template-columns: minmax(0, 1fr); }
+  .field-wide { grid-column: auto; }
+  .field { min-width: 0; }
+  .field input, .field select, .field textarea { font-size: 16px; padding: 12px; width: 100%; min-width: 0; }
+  #editAttachmentInput { max-width: 100%; }
+  .attachments-controls { flex-wrap: wrap; }
+  .form-actions { margin-top: 24px; }
+  .form-actions .btn { flex: 1; padding: 14px; font-size: 16px; }
+
+  /* Login card breathing room */
+  #loginCard { margin: 16px; }
 }
 
 /* ── Attachments ── */
