@@ -1,7 +1,7 @@
 // ── Supabase config ───────────────────────────────────────────────────────────
 // Fill these in after creating your Supabase project.
-const SUPABASE_URL = 'https://sztatmknjyzzyzngvpff.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_GvPXZ8AVgix3aZ2UDS0YRQ_ktlLvMtB';
+const SUPABASE_URL = 'https://jmmtuiwylzgqdstqztkx.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_W8tvd0SLZDVUX6RtuIf87w_XxfgyGnW';
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let db          = null;
