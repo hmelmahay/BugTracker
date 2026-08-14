@@ -488,7 +488,10 @@ body {
   font-size: 13px;
 }
 
-.field textarea { resize: vertical; }
+.field textarea {
+  resize: vertical;
+  overflow-y: hidden; /* auto-sized to content on open — no inner scrollbar */
+}
 
 .field input:focus,
 .field select:focus,

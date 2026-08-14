@@ -483,6 +483,20 @@ document.querySelectorAll('.column').forEach(col => {
 let editingBugId = null;
 let editingAttachments = [];
 
+// Auto-size modal textareas to fit their content — no inner scrollbars,
+// no manual resizing. The modal itself scrolls if a card is very long.
+const MODAL_TEXTAREAS = ['editSteps', 'editNotes', 'editQuestion', 'editAnswer', 'editWhatWasDone', 'editHowToTest', 'editFeedback'];
+
+function autosizeTextarea(el) {
+  el.style.height = 'auto';
+  el.style.height = (el.scrollHeight + 2) + 'px';
+}
+
+MODAL_TEXTAREAS.forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('input', () => autosizeTextarea(el));
+});
+
 function openEditModal(id) {
   const b = bugs.find(b => b.id === id);
   if (!b) return;
@@ -504,6 +518,8 @@ function openEditModal(id) {
   document.getElementById('editAttachmentInput').value = '';
   renderEditAttachments();
   document.getElementById('editModalBackdrop').classList.add('open');
+  // Size the textareas to their content now that the modal is visible
+  MODAL_TEXTAREAS.forEach(fieldId => autosizeTextarea(document.getElementById(fieldId)));
   if (!TOUCH_DEVICE) document.getElementById('editTitle').focus();
 }
 
