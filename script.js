@@ -6,7 +6,6 @@ const SUPABASE_KEY = 'sb_publishable_W8tvd0SLZDVUX6RtuIf87w_XxfgyGnW';
 // ── State ─────────────────────────────────────────────────────────────────────
 let db          = null;
 let bugs        = [];
-let teamMembers = [];
 let currentUser = null;
 
 const STATUSES = ['open', 'features-open', 'questions', 'in-progress', 'in-review', 'closed'];
@@ -78,7 +77,6 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
   currentUser = data.user;
   document.getElementById('userLabel').textContent = currentUser.email;
   showApp();
-  await loadTeamMembers();
   await loadBugs();
 });
 
@@ -90,7 +88,6 @@ document.getElementById('signOutBtn').addEventListener('click', async () => {
   await db.auth.signOut();
   currentUser = null;
   bugs = [];
-  teamMembers = [];
   renderAll();
   showLogin();
 });
@@ -118,26 +115,6 @@ async function initSupabase() {
     showLogin('Connection error: ' + e.message);
     return false;
   }
-}
-
-// ── Team Members ──────────────────────────────────────────────────────────────
-
-async function loadTeamMembers() {
-  const { data, error } = await db.from('team_members').select('*').order('name');
-  if (error) { console.warn('Could not load team members:', error.message); return; }
-  teamMembers = data;
-  populateAssigneeDropdowns();
-}
-
-function populateAssigneeDropdowns() {
-  const options = `<option value="">Unassigned</option>` +
-    teamMembers.map(m => `<option value="${escHtml(m.name)}">${escHtml(m.name)}</option>`).join('');
-  document.getElementById('bugAssignedTo').innerHTML   = options;
-  document.getElementById('editAssignedTo').innerHTML  = options;
-  // Filter dropdown
-  document.getElementById('assigneeFilter').innerHTML =
-    `<option value="">All Assignees</option>` +
-    teamMembers.map(m => `<option value="${escHtml(m.name)}">${escHtml(m.name)}</option>`).join('');
 }
 
 // ── Bugs CRUD ─────────────────────────────────────────────────────────────────
@@ -178,10 +155,8 @@ async function deleteBug(id) {
 function filteredBugs() {
   const q        = document.getElementById('searchInput').value.toLowerCase();
   const category = document.getElementById('categoryFilter').value;
-  const assignee = document.getElementById('assigneeFilter').value;
   return bugs.filter(b => {
     if (category && (b.category || '') !== category) return false;
-    if (assignee && b.assigned_to !== assignee) return false;
     if (q && !b.title.toLowerCase().includes(q) &&
              !(b.notes || '').toLowerCase().includes(q) &&
              !(b.steps || '').toLowerCase().includes(q)) return false;
@@ -224,9 +199,6 @@ function bugCard(b) {
   const categoryLabel = b.category
     ? `<span class="badge badge-category">${escHtml(b.category)}</span>`
     : '';
-  const assignedLabel = b.assigned_to
-    ? `<span class="badge badge-assignee">${escHtml(b.assigned_to)}</span>`
-    : `<span class="badge badge-unassigned">Unassigned</span>`;
   const reporterLabel = b.reporter
     ? `<span class="badge badge-reporter">${escHtml(b.reporter)}</span>`
     : '';
@@ -235,8 +207,7 @@ function bugCard(b) {
       <div class="bug-title">${escHtml(b.title)}</div>
       <div class="bug-meta">
         ${categoryLabel}
-        ${b.loe ? `<span class="badge badge-loe">LOE: ${escHtml(b.loe)}</span>` : ''}
-        ${assignedLabel}
+        ${b.loe ? `<span class="badge badge-loe loe-${escHtml(String(b.loe).toLowerCase())}">LOE: ${escHtml(b.loe)}</span>` : ''}
         ${reporterLabel}
       </div>
       ${b.steps ? `<div class="bug-steps">${escHtml(b.steps)}</div>` : ''}
@@ -408,7 +379,6 @@ document.getElementById('addBugBtn').addEventListener('click', async () => {
     title,
     category:    document.getElementById('bugCategory').value,
     status:      document.getElementById('bugStatus').value,
-    assigned_to: document.getElementById('bugAssignedTo').value,
     reporter:    currentUser?.email || '',
     steps:       '',
     notes:       '',
@@ -424,7 +394,6 @@ document.getElementById('addBugBtn').addEventListener('click', async () => {
   document.getElementById('bugTitle').value = '';
   document.getElementById('bugCategory').value  = '';
   document.getElementById('bugStatus').value    = 'open';
-  document.getElementById('bugAssignedTo').value = '';
   if (!TOUCH_DEVICE) document.getElementById('bugTitle').focus();
 });
 
@@ -436,7 +405,6 @@ document.getElementById('bugTitle').addEventListener('keydown', e => {
 
 document.getElementById('searchInput').addEventListener('input', renderAll);
 document.getElementById('categoryFilter').addEventListener('change', renderAll);
-document.getElementById('assigneeFilter').addEventListener('change', renderAll);
 
 // ── Drag & drop ───────────────────────────────────────────────────────────────
 
@@ -494,7 +462,6 @@ function openEditModal(id) {
   document.getElementById('editCategory').value   = b.category || '';
   document.getElementById('editLoe').value        = b.loe || '';
   document.getElementById('editStatus').value     = b.status;
-  document.getElementById('editAssignedTo').value = b.assigned_to || '';
   document.getElementById('editReporter').value   = b.reporter   || '';
   document.getElementById('editSteps').value      = b.steps      || '';
   document.getElementById('editNotes').value      = b.notes      || '';
@@ -606,7 +573,6 @@ document.getElementById('editSaveBtn').addEventListener('click', async () => {
     category:    document.getElementById('editCategory').value,
     loe:         document.getElementById('editLoe').value,
     status:      document.getElementById('editStatus').value,
-    assigned_to: document.getElementById('editAssignedTo').value,
     reporter:    document.getElementById('editReporter').value.trim(),
     steps:       document.getElementById('editSteps').value.trim(),
     notes:       document.getElementById('editNotes').value.trim(),
@@ -629,7 +595,6 @@ document.addEventListener('keydown', e => {
 (async () => {
   const authed = await initSupabase();
   if (authed) {
-    await loadTeamMembers();
     await loadBugs();
   }
 })();

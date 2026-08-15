@@ -47,9 +47,6 @@
         <option value="Auth/Login">Auth/Login</option>
         <option value="Other">Other</option>
       </select>
-      <select id="bugAssignedTo" class="form-select">
-        <option value="">Unassigned</option>
-      </select>
       <select id="bugStatus" class="form-select">
         <option value="open">Bugs</option>
         <option value="features-open">Features</option>
@@ -86,9 +83,6 @@
       <option value="Navigation">Navigation</option>
       <option value="Auth/Login">Auth/Login</option>
       <option value="Other">Other</option>
-    </select>
-    <select id="assigneeFilter" class="form-select">
-      <option value="">All Assignees</option>
     </select>
     <div class="stats-inline">
       <span class="stat-chip"><span class="stat-chip-label">Total</span> <span class="stat-chip-value" id="statTotal">0</span></span>
@@ -202,12 +196,6 @@
             <option value="in-progress">In Progress</option>
             <option value="in-review">Review</option>
             <option value="closed">Closed</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="editAssignedTo">Assigned To</label>
-          <select id="editAssignedTo">
-            <option value="">Unassigned</option>
           </select>
         </div>
         <div class="field">
