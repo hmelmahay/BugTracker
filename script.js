@@ -245,6 +245,7 @@ function bugCard(b) {
       <div class="bug-meta">
         ${categoryLabel}
         <span class="badge ${SEVERITY_CLASS[b.severity] || 'severity-medium'}">${escHtml(b.severity)}</span>
+        ${b.loe ? `<span class="badge badge-loe">LOE: ${escHtml(b.loe)}</span>` : ''}
         ${assignedLabel}
         ${reporterLabel}
       </div>
@@ -505,6 +506,7 @@ function openEditModal(id) {
   document.getElementById('editTitle').value      = b.title;
   document.getElementById('editCategory').value   = b.category || '';
   document.getElementById('editSeverity').value   = b.severity;
+  document.getElementById('editLoe').value        = b.loe || '';
   document.getElementById('editStatus').value     = b.status;
   document.getElementById('editAssignedTo').value = b.assigned_to || '';
   document.getElementById('editReporter').value   = b.reporter   || '';
@@ -617,6 +619,7 @@ document.getElementById('editSaveBtn').addEventListener('click', async () => {
     title,
     category:    document.getElementById('editCategory').value,
     severity:    document.getElementById('editSeverity').value,
+    loe:         document.getElementById('editLoe').value,
     status:      document.getElementById('editStatus').value,
     assigned_to: document.getElementById('editAssignedTo').value,
     reporter:    document.getElementById('editReporter').value.trim(),
