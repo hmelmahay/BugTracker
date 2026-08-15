@@ -175,20 +175,11 @@ async function deleteBug(id) {
 
 // ── Render ────────────────────────────────────────────────────────────────────
 
-const SEVERITY_CLASS = {
-  Critical: 'severity-critical',
-  High:     'severity-high',
-  Medium:   'severity-medium',
-  Low:      'severity-low',
-};
-
 function filteredBugs() {
   const q        = document.getElementById('searchInput').value.toLowerCase();
-  const severity = document.getElementById('severityFilter').value;
   const category = document.getElementById('categoryFilter').value;
   const assignee = document.getElementById('assigneeFilter').value;
   return bugs.filter(b => {
-    if (severity && b.severity !== severity) return false;
     if (category && (b.category || '') !== category) return false;
     if (assignee && b.assigned_to !== assignee) return false;
     if (q && !b.title.toLowerCase().includes(q) &&
@@ -244,7 +235,6 @@ function bugCard(b) {
       <div class="bug-title">${escHtml(b.title)}</div>
       <div class="bug-meta">
         ${categoryLabel}
-        <span class="badge ${SEVERITY_CLASS[b.severity] || 'severity-medium'}">${escHtml(b.severity)}</span>
         ${b.loe ? `<span class="badge badge-loe">LOE: ${escHtml(b.loe)}</span>` : ''}
         ${assignedLabel}
         ${reporterLabel}
@@ -417,7 +407,6 @@ document.getElementById('addBugBtn').addEventListener('click', async () => {
     id:          pendingBugId || uid(),
     title,
     category:    document.getElementById('bugCategory').value,
-    severity:    document.getElementById('bugSeverity').value,
     status:      document.getElementById('bugStatus').value,
     assigned_to: document.getElementById('bugAssignedTo').value,
     reporter:    currentUser?.email || '',
@@ -434,7 +423,6 @@ document.getElementById('addBugBtn').addEventListener('click', async () => {
   renderNewBugAttachments();
   document.getElementById('bugTitle').value = '';
   document.getElementById('bugCategory').value  = '';
-  document.getElementById('bugSeverity').value  = 'Medium';
   document.getElementById('bugStatus').value    = 'open';
   document.getElementById('bugAssignedTo').value = '';
   if (!TOUCH_DEVICE) document.getElementById('bugTitle').focus();
@@ -447,7 +435,6 @@ document.getElementById('bugTitle').addEventListener('keydown', e => {
 // ── Filters ───────────────────────────────────────────────────────────────────
 
 document.getElementById('searchInput').addEventListener('input', renderAll);
-document.getElementById('severityFilter').addEventListener('change', renderAll);
 document.getElementById('categoryFilter').addEventListener('change', renderAll);
 document.getElementById('assigneeFilter').addEventListener('change', renderAll);
 
@@ -505,7 +492,6 @@ function openEditModal(id) {
   editingAttachments = Array.isArray(b.attachments) ? [...b.attachments] : [];
   document.getElementById('editTitle').value      = b.title;
   document.getElementById('editCategory').value   = b.category || '';
-  document.getElementById('editSeverity').value   = b.severity;
   document.getElementById('editLoe').value        = b.loe || '';
   document.getElementById('editStatus').value     = b.status;
   document.getElementById('editAssignedTo').value = b.assigned_to || '';
@@ -618,7 +604,6 @@ document.getElementById('editSaveBtn').addEventListener('click', async () => {
   await updateBug(editingBugId, {
     title,
     category:    document.getElementById('editCategory').value,
-    severity:    document.getElementById('editSeverity').value,
     loe:         document.getElementById('editLoe').value,
     status:      document.getElementById('editStatus').value,
     assigned_to: document.getElementById('editAssignedTo').value,

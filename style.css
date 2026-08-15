@@ -298,12 +298,6 @@ body {
   font-weight: 700;
 }
 
-/* Severity badges */
-.severity-critical  { background: #3b0f0f; color: #ff6b6b; border: 1px solid #7f1d1d; }
-.severity-high      { background: #3b2008; color: #fb923c; }
-.severity-medium    { background: #2d2008; color: #fbbf24; }
-.severity-low       { background: #1a2535; color: #60a5fa; }
-
 /* Other badges */
 .badge-loe        { background: #0c3b4a; color: #67e8f9; }
 .badge-category   { background: #2d1e40; color: #c4b5fd; }
