@@ -62,6 +62,69 @@ body {
   color: var(--muted);
 }
 
+/* ── Last activity bar ── */
+.activity-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 16px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.activity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--muted);
+}
+.activity-dot.fresh { background: #4ade80; box-shadow: 0 0 6px rgba(74, 222, 128, .6); }
+.activity-dot.warm  { background: #fbbf24; }
+.activity-dot.stale { background: #f85149; }
+
+.activity-label {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.activity-time {
+  font-weight: 700;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.activity-summary {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1;
+}
+.activity-summary:not(:empty)::before {
+  content: '·';
+  margin-right: 8px;
+}
+
+.activity-refresh {
+  background: none;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  color: var(--muted);
+  cursor: pointer;
+  padding: 2px 8px;
+  font-size: 14px;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+.activity-refresh:hover { color: var(--text); border-color: var(--primary); }
+.activity-refresh.spinning { animation: activity-spin .8s linear infinite; }
+
+@keyframes activity-spin { to { transform: rotate(360deg); } }
+
 /* ── Form bar ── */
 .form-bar {
   background: var(--surface);
@@ -305,6 +368,20 @@ body {
 .badge-loe.loe-low    { background: #10321e; color: #4ade80; }
 .badge-category   { background: #2d1e40; color: #c4b5fd; }
 .badge-reporter   { background: #1e2a20; color: #86efac; }
+
+/* "updated X ago" — subtle by default, lit up when touched in the last hour */
+.badge-updated {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border2);
+  font-weight: 600;
+  margin-left: auto;
+}
+.badge-updated.recent {
+  background: #10321e;
+  color: #4ade80;
+  border-color: #14532d;
+}
 
 .bug-steps,
 .bug-notes {
@@ -559,6 +636,23 @@ body {
   .topbar {
     padding: calc(8px + env(safe-area-inset-top)) 14px 8px;
   }
+
+  /* Activity bar wraps to two lines so the summary stays readable on a phone */
+  .activity-bar {
+    flex-wrap: wrap;
+    padding: 8px 14px;
+    row-gap: 4px;
+  }
+  .activity-refresh { margin-left: auto; }
+  .activity-summary {
+    flex: 0 0 100%;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.35;
+  }
+  .activity-summary:not(:empty)::before { content: none; }
 
   /* Collapsible Report-a-Bug form */
   .form-bar { padding: 10px 14px; }

@@ -50,6 +50,30 @@ function setStatus(msg) {
   document.getElementById('syncStatus').textContent = msg;
 }
 
+// "3 min ago", "2 hr ago", "yesterday", "Aug 3" — short enough for a card badge
+function relativeTime(iso) {
+  if (!iso) return '';
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return '';
+  const mins = Math.floor((Date.now() - then) / 60000);
+  if (mins < 1)    return 'just now';
+  if (mins < 60)   return `${mins} min ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)    return `${hrs} hr ago`;
+  const days = Math.floor(hrs / 24);
+  if (days === 1)  return 'yesterday';
+  if (days < 7)    return `${days} days ago`;
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+// Who made the change: an email shows as its name part, API keys show as "API"
+function actorLabel(actor) {
+  if (!actor) return '';
+  if (actor.includes('@')) return actor.split('@')[0];
+  if (actor === 'service_role' || actor === 'anon' || actor === 'api') return 'API';
+  return actor;
+}
+
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
 function showApp() {
@@ -78,6 +102,8 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
   document.getElementById('userLabel').textContent = currentUser.email;
   showApp();
   await loadBugs();
+  await loadLastActivity();
+  startActivityTimers();
 });
 
 document.getElementById('loginPassword').addEventListener('keydown', e => {
@@ -127,19 +153,89 @@ async function loadBugs() {
   setStatus('Connected');
 }
 
+// ── Last activity ─────────────────────────────────────────────────────────────
+// Fed by a Postgres trigger on `bugs`, so it captures every change regardless of
+// where it came from — this UI, or Claude hitting the API directly.
+
+let lastActivity   = null;   // most recent bug_activity row
+let activityTicker = null;
+
+async function loadLastActivity() {
+  const { data, error } = await db
+    .from('bug_activity')
+    .select('*')
+    .order('at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) { console.warn('Activity load failed:', error.message); return null; }
+  lastActivity = data;
+  renderActivityBar();
+  return data;
+}
+
+function renderActivityBar() {
+  const dotEl     = document.getElementById('activityDot');
+  const timeEl    = document.getElementById('activityTime');
+  const summaryEl = document.getElementById('activitySummary');
+
+  if (!lastActivity) {
+    dotEl.className          = 'activity-dot stale';
+    timeEl.textContent       = 'none recorded yet';
+    summaryEl.textContent    = '';
+    return;
+  }
+
+  const ageMin = (Date.now() - new Date(lastActivity.at).getTime()) / 60000;
+  // Claude runs every 30 min, so an hour of silence is worth noticing
+  const freshness = ageMin < 60 ? 'fresh' : ageMin < 360 ? 'warm' : 'stale';
+  dotEl.className     = `activity-dot ${freshness}`;
+  timeEl.textContent  = relativeTime(lastActivity.at);
+  timeEl.title        = new Date(lastActivity.at).toLocaleString();
+
+  const who = actorLabel(lastActivity.actor);
+  summaryEl.textContent = (who ? `${who}: ` : '') + lastActivity.summary;
+  summaryEl.title       = summaryEl.textContent;
+}
+
+// Poll for new activity. If something changed, pull the board fresh too —
+// unless a card is open for editing, which we don't want to yank out from under.
+async function pollActivity() {
+  if (!db || !currentUser) return;
+  const prevId = lastActivity?.id ?? null;
+  const latest = await loadLastActivity();
+  if (latest && latest.id !== prevId && !editingBugId) await loadBugs();
+}
+
+function startActivityTimers() {
+  if (activityTicker) return;
+  // Refresh relative times every 30s (no network, no board re-render), poll every 60s
+  activityTicker = setInterval(() => { renderActivityBar(); refreshCardTimestamps(); }, 30000);
+  setInterval(pollActivity, 60000);
+}
+
+document.getElementById('activityRefresh').addEventListener('click', async () => {
+  const btn = document.getElementById('activityRefresh');
+  btn.classList.add('spinning');
+  await Promise.all([loadBugs(), loadLastActivity()]);
+  btn.classList.remove('spinning');
+});
+
 async function addBug(bug) {
   const { data, error } = await db.from('bugs').insert(bug).select().single();
   if (error) { alert('Error adding bug: ' + error.message); return; }
   bugs.push(data);
   renderAll();
+  loadLastActivity();
 }
 
 async function updateBug(id, changes) {
-  const { error } = await db.from('bugs').update(changes).eq('id', id);
+  // Select the row back so we pick up the trigger-set updated_at
+  const { data, error } = await db.from('bugs').update(changes).eq('id', id).select().single();
   if (error) { alert('Error updating bug: ' + error.message); return; }
   const idx = bugs.findIndex(b => b.id === id);
-  if (idx !== -1) Object.assign(bugs[idx], changes);
+  if (idx !== -1) Object.assign(bugs[idx], data || changes);
   renderAll();
+  loadLastActivity();
 }
 
 async function deleteBug(id) {
@@ -148,6 +244,7 @@ async function deleteBug(id) {
   if (error) { alert('Error deleting bug: ' + error.message); return; }
   bugs = bugs.filter(b => b.id !== id);
   renderAll();
+  loadLastActivity();
 }
 
 // ── Render ────────────────────────────────────────────────────────────────────
@@ -195,12 +292,27 @@ function renderAll() {
   });
 }
 
+// Update the "updated X ago" badges in place, without rebuilding the board
+function refreshCardTimestamps() {
+  document.querySelectorAll('.badge-updated').forEach(el => {
+    const ts = el.dataset.ts;
+    if (!ts) return;
+    el.textContent = relativeTime(ts);
+    el.classList.toggle('recent', (Date.now() - new Date(ts).getTime()) < 3600000);
+  });
+}
+
 function bugCard(b) {
   const categoryLabel = b.category
     ? `<span class="badge badge-category">${escHtml(b.category)}</span>`
     : '';
   const reporterLabel = b.reporter
     ? `<span class="badge badge-reporter">${escHtml(b.reporter)}</span>`
+    : '';
+  const touched      = b.updated_at || b.created_at;
+  const isRecent     = touched && (Date.now() - new Date(touched).getTime()) < 3600000;
+  const updatedLabel = touched
+    ? `<span class="badge badge-updated${isRecent ? ' recent' : ''}" data-ts="${escHtml(touched)}" title="Last changed ${escHtml(new Date(touched).toLocaleString())}">${escHtml(relativeTime(touched))}</span>`
     : '';
   return `
     <div class="bug-card" draggable="true" data-id="${escHtml(b.id)}">
@@ -209,6 +321,7 @@ function bugCard(b) {
         ${categoryLabel}
         ${b.loe ? `<span class="badge badge-loe loe-${escHtml(String(b.loe).toLowerCase())}">LOE: ${escHtml(b.loe)}</span>` : ''}
         ${reporterLabel}
+        ${updatedLabel}
       </div>
       ${b.steps ? `<div class="bug-steps">${escHtml(b.steps)}</div>` : ''}
       ${b.notes ? `<div class="bug-notes">${escHtml(b.notes)}</div>` : ''}
@@ -596,5 +709,7 @@ document.addEventListener('keydown', e => {
   const authed = await initSupabase();
   if (authed) {
     await loadBugs();
+    await loadLastActivity();
+    startActivityTimers();
   }
 })();
