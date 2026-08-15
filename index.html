@@ -26,21 +26,22 @@
     </div>
   </header>
 
-  <!-- Last activity indicator -->
-  <div class="activity-bar" id="activityBar">
-    <span class="activity-dot" id="activityDot"></span>
-    <span class="activity-label">Last activity</span>
-    <span class="activity-time" id="activityTime">checking…</span>
-    <span class="activity-summary" id="activitySummary"></span>
+  <!-- Board activity + last production deploy -->
+  <div class="status-bar" id="statusBar">
+    <span class="status-item" id="activityItem">
+      <span class="status-dot activity" id="activityDot"></span>
+      <span class="status-label">Last activity</span>
+      <span class="status-time" id="activityTime">checking…</span>
+    </span>
+    <span class="status-detail" id="activitySummary"></span>
+    <span class="status-sep"></span>
+    <span class="status-item" id="deployItem">
+      <span class="status-dot deploy" id="deployDot"></span>
+      <span class="status-label">Live on phone</span>
+      <span class="status-time" id="deployTime">checking…</span>
+    </span>
+    <span class="status-detail" id="deployNote"></span>
     <button type="button" class="activity-refresh" id="activityRefresh" title="Refresh board">&#8635;</button>
-  </div>
-
-  <!-- Last production deploy (EAS Update on the production channel) -->
-  <div class="deploy-bar" id="deployBar">
-    <span class="deploy-dot" id="deployDot"></span>
-    <span class="deploy-label">Live on phone</span>
-    <span class="deploy-time" id="deployTime">checking…</span>
-    <span class="deploy-note" id="deployNote"></span>
   </div>
 
   <!-- Add Bug form -->
@@ -50,7 +51,7 @@
       <span class="form-toggle-icon">&#9662;</span>
     </button>
     <div class="form-row">
-      <input id="bugTitle" type="text" placeholder="Bug title" class="form-input flex-3" />
+      <input id="bugTitle" type="text" placeholder="Bug title" class="form-input flex-title" />
       <select id="bugCategory" class="form-select">
         <option value="">No Category</option>
         <option value="Home">Home</option>
@@ -72,15 +73,15 @@
         <option value="in-review">Review</option>
         <option value="closed">Closed</option>
       </select>
-      <button id="addBugBtn" class="btn btn-primary">Add Bug</button>
-    </div>
-    <div class="form-attach-row">
-      <label class="btn btn-outline attach-label">
+      <label class="btn btn-outline attach-label" title="Attach screenshots from Photos">
         &#128247; Add screenshots
         <input id="newBugAttachmentInput" type="file" accept="image/*" multiple style="display:none" />
       </label>
-      <button type="button" id="newBugPasteBtn" class="btn btn-outline attach-label">&#128203; Paste</button>
-      <span class="attachments-hint" id="newBugAttachHint">from Photos, or paste a copied screenshot</span>
+      <button type="button" id="newBugPasteBtn" class="btn btn-outline attach-label" title="Paste a copied screenshot">&#128203; Paste</button>
+      <button id="addBugBtn" class="btn btn-primary">Add Bug</button>
+    </div>
+    <div class="form-attach-row">
+      <span class="attachments-hint" id="newBugAttachHint"></span>
       <div id="newBugAttachmentsList" class="attachments-list"></div>
     </div>
   </div>

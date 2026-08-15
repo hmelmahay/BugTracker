@@ -62,8 +62,8 @@ body {
   color: var(--muted);
 }
 
-/* ── Last activity bar ── */
-.activity-bar {
+/* ── Status bar: board activity + last production deploy, one row ── */
+.status-bar {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -74,39 +74,59 @@ body {
   flex-shrink: 0;
 }
 
-.activity-dot {
+.status-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.status-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
   background: var(--muted);
 }
-.activity-dot.fresh { background: #4ade80; box-shadow: 0 0 6px rgba(74, 222, 128, .6); }
-.activity-dot.warm  { background: #fbbf24; }
-.activity-dot.stale { background: #f85149; }
+/* Board activity: green when Claude has touched it recently */
+.status-dot.activity.fresh { background: #4ade80; box-shadow: 0 0 6px rgba(74, 222, 128, .6); }
+.status-dot.activity.warm  { background: #fbbf24; }
+.status-dot.activity.stale { background: #f85149; }
+/* Deploy: blue when the build on your phone is current */
+.status-dot.deploy.fresh   { background: #60a5fa; box-shadow: 0 0 6px rgba(96, 165, 250, .6); }
+.status-dot.deploy.warm    { background: #fbbf24; }
+.status-dot.deploy.stale   { background: var(--muted); }
 
-.activity-label {
-  color: var(--muted);
-  flex-shrink: 0;
-}
+.status-label { color: var(--muted); flex-shrink: 0; }
 
-.activity-time {
+.status-time {
   font-weight: 700;
   color: var(--text);
   flex-shrink: 0;
 }
 
-.activity-summary {
+.status-detail {
   color: var(--muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
-  flex: 1;
+  flex: 1 1 auto;
 }
-.activity-summary:not(:empty)::before {
+.status-detail.warn { color: #fbbf24; }
+.status-detail:not(:empty)::before {
   content: '·';
   margin-right: 8px;
+}
+/* The deploy note is short — let the activity summary take the slack */
+#deployNote { flex: 0 1 auto; }
+
+.status-sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border2);
+  flex-shrink: 0;
+  margin: 0 2px;
 }
 
 .activity-refresh {
@@ -124,51 +144,6 @@ body {
 .activity-refresh.spinning { animation: activity-spin .8s linear infinite; }
 
 @keyframes activity-spin { to { transform: rotate(360deg); } }
-
-/* ── Last production deploy bar ── */
-.deploy-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 16px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  font-size: 12px;
-  flex-shrink: 0;
-}
-
-.deploy-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  background: var(--muted);
-}
-.deploy-dot.fresh { background: #60a5fa; box-shadow: 0 0 6px rgba(96, 165, 250, .6); }
-.deploy-dot.warm  { background: #fbbf24; }
-.deploy-dot.stale { background: var(--muted); }
-
-.deploy-label { color: var(--muted); flex-shrink: 0; }
-
-.deploy-time {
-  font-weight: 700;
-  color: var(--text);
-  flex-shrink: 0;
-}
-
-.deploy-note {
-  color: var(--muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
-  flex: 1;
-}
-.deploy-note.warn { color: #fbbf24; }
-.deploy-note:not(:empty)::before {
-  content: '·';
-  margin-right: 8px;
-}
 
 /* ── Form bar ── */
 .form-bar {
@@ -243,7 +218,23 @@ body {
   border-color: var(--primary);
 }
 
-.flex-3 { flex: 3; min-width: 180px; }
+/* Shorter than before — the attach buttons now share this row */
+.flex-title { flex: 1 1 200px; min-width: 160px; max-width: 420px; }
+
+/* Desktop: fold the "Report a Bug" heading onto the input row */
+@media (min-width: 821px) {
+  .form-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .form-bar-header { width: auto; flex: 0 0 auto; }
+  .form-bar-title  { margin-bottom: 0; white-space: nowrap; }
+  .form-row        { flex: 1 1 auto; min-width: 0; }
+  /* Hint + thumbnails wrap to their own line under the controls */
+  .form-attach-row { flex: 0 0 100%; margin-top: 0; }
+}
 
 .form-attach-row {
   display: flex;
@@ -681,14 +672,22 @@ body {
     padding: calc(8px + env(safe-area-inset-top)) 14px 8px;
   }
 
-  /* Activity bar wraps to two lines so the summary stays readable on a phone */
-  .activity-bar {
+  /* Both headlines share the top line; their details wrap underneath.
+     CSS order does the reshuffle so the desktop DOM order can stay readable. */
+  .status-bar {
     flex-wrap: wrap;
     padding: 8px 14px;
     row-gap: 4px;
+    column-gap: 10px;
   }
-  .activity-refresh { margin-left: auto; }
-  .activity-summary {
+  #activityItem     { order: 1; }
+  #deployItem       { order: 2; }
+  .activity-refresh { order: 3; margin-left: auto; }
+  #activitySummary  { order: 4; }
+  #deployNote       { order: 5; }
+  .status-sep       { display: none; }
+
+  .status-detail {
     flex: 0 0 100%;
     white-space: normal;
     display: -webkit-box;
@@ -696,19 +695,7 @@ body {
     -webkit-box-orient: vertical;
     line-height: 1.35;
   }
-  .activity-summary:not(:empty)::before { content: none; }
-
-  .deploy-bar {
-    flex-wrap: wrap;
-    padding: 8px 14px;
-    row-gap: 4px;
-  }
-  .deploy-note {
-    flex: 0 0 100%;
-    white-space: normal;
-    line-height: 1.35;
-  }
-  .deploy-note:not(:empty)::before { content: none; }
+  .status-detail:not(:empty)::before { content: none; }
 
   /* Collapsible Report-a-Bug form */
   .form-bar { padding: 10px 14px; }

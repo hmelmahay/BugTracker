@@ -181,7 +181,7 @@ function renderActivityBar() {
   const summaryEl = document.getElementById('activitySummary');
 
   if (!lastActivity) {
-    dotEl.className          = 'activity-dot stale';
+    dotEl.className          = 'status-dot activity stale';
     timeEl.textContent       = 'none recorded yet';
     summaryEl.textContent    = '';
     return;
@@ -190,7 +190,7 @@ function renderActivityBar() {
   const ageMin = (Date.now() - new Date(lastActivity.at).getTime()) / 60000;
   // Claude runs every 30 min, so an hour of silence is worth noticing
   const freshness = ageMin < 60 ? 'fresh' : ageMin < 360 ? 'warm' : 'stale';
-  dotEl.className     = `activity-dot ${freshness}`;
+  dotEl.className     = `status-dot activity ${freshness}`;
   timeEl.textContent  = relativeTime(lastActivity.at);
   timeEl.title        = new Date(lastActivity.at).toLocaleString();
 
@@ -226,7 +226,7 @@ function renderDeployBar() {
   const noteEl = document.getElementById('deployNote');
 
   if (!lastDeploy) {
-    dotEl.className       = 'deploy-dot stale';
+    dotEl.className       = 'status-dot deploy stale';
     timeEl.textContent    = 'no deploy recorded yet';
     noteEl.textContent    = '';
     return;
@@ -234,7 +234,7 @@ function renderDeployBar() {
 
   const published = lastDeploy.published_at;
   const ageHrs    = (Date.now() - new Date(published).getTime()) / 3600000;
-  dotEl.className    = `deploy-dot ${ageHrs < 24 ? 'fresh' : ageHrs < 72 ? 'warm' : 'stale'}`;
+  dotEl.className    = `status-dot deploy ${ageHrs < 24 ? 'fresh' : ageHrs < 72 ? 'warm' : 'stale'}`;
   timeEl.textContent = relativeTime(published);
   timeEl.title       = `EAS Update ${lastDeploy.update_id || ''}\nPublished ${new Date(published).toLocaleString()}`;
 
@@ -493,10 +493,11 @@ async function readClipboardImages() {
 }
 
 function flashAttachHint(msg) {
+  // The hint row is empty by default so it takes no space — it only appears
+  // to carry a transient message, then clears itself.
   const hint = document.getElementById('newBugAttachHint');
-  const orig = 'from Photos, or paste a copied screenshot';
   hint.textContent = msg;
-  setTimeout(() => { hint.textContent = orig; }, 3000);
+  setTimeout(() => { hint.textContent = ''; }, 3000);
 }
 
 document.getElementById('newBugPasteBtn').addEventListener('click', async () => {
