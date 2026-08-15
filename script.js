@@ -103,6 +103,7 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
   showApp();
   await loadBugs();
   await loadLastActivity();
+  await loadLastDeploy();
   startActivityTimers();
 });
 
@@ -150,6 +151,7 @@ async function loadBugs() {
   if (error) { setStatus('Error loading bugs: ' + error.message); return; }
   bugs = data;
   renderAll();
+  renderDeployBar();   // the "newer than this build" count depends on the board
   setStatus('Connected');
 }
 
@@ -197,6 +199,59 @@ function renderActivityBar() {
   summaryEl.title       = summaryEl.textContent;
 }
 
+// ── Last production deploy ────────────────────────────────────────────────────
+// The `check-deploy` edge function reads the EAS Update currently live on the
+// production channel — i.e. what your phone gets when it restarts the app.
+
+let lastDeploy = null;
+
+async function loadLastDeploy() {
+  try {
+    const { data, error } = await db.functions.invoke('check-deploy');
+    if (error) throw error;
+    lastDeploy = data?.latest || null;
+  } catch (e) {
+    console.warn('Deploy check failed:', e.message || e);
+    // Fall back to the table directly, in case the function is unreachable
+    const { data } = await db.from('deployments')
+      .select('*').order('published_at', { ascending: false }).limit(1).maybeSingle();
+    lastDeploy = data || null;
+  }
+  renderDeployBar();
+}
+
+function renderDeployBar() {
+  const dotEl  = document.getElementById('deployDot');
+  const timeEl = document.getElementById('deployTime');
+  const noteEl = document.getElementById('deployNote');
+
+  if (!lastDeploy) {
+    dotEl.className       = 'deploy-dot stale';
+    timeEl.textContent    = 'no deploy recorded yet';
+    noteEl.textContent    = '';
+    return;
+  }
+
+  const published = lastDeploy.published_at;
+  const ageHrs    = (Date.now() - new Date(published).getTime()) / 3600000;
+  dotEl.className    = `deploy-dot ${ageHrs < 24 ? 'fresh' : ageHrs < 72 ? 'warm' : 'stale'}`;
+  timeEl.textContent = relativeTime(published);
+  timeEl.title       = `EAS Update ${lastDeploy.update_id || ''}\nPublished ${new Date(published).toLocaleString()}`;
+
+  // Anything moved to Review after this build shipped isn't testable yet —
+  // that's the thing worth knowing before you pick up the phone.
+  const pending = bugs.filter(b =>
+    b.status === 'in-review' &&
+    (b.updated_at || b.created_at) &&
+    new Date(b.updated_at || b.created_at).getTime() > new Date(published).getTime()
+  ).length;
+
+  noteEl.textContent = pending
+    ? `${pending} Review item${pending === 1 ? '' : 's'} newer than this build`
+    : 'Review column is covered by this build';
+  noteEl.classList.toggle('warn', pending > 0);
+}
+
 // Poll for new activity. If something changed, pull the board fresh too —
 // unless a card is open for editing, which we don't want to yank out from under.
 async function pollActivity() {
@@ -209,14 +264,20 @@ async function pollActivity() {
 function startActivityTimers() {
   if (activityTicker) return;
   // Refresh relative times every 30s (no network, no board re-render), poll every 60s
-  activityTicker = setInterval(() => { renderActivityBar(); refreshCardTimestamps(); }, 30000);
+  activityTicker = setInterval(() => {
+    renderActivityBar();
+    renderDeployBar();
+    refreshCardTimestamps();
+  }, 30000);
   setInterval(pollActivity, 60000);
+  // Deploys are far less frequent than board edits — check every 5 min
+  setInterval(loadLastDeploy, 300000);
 }
 
 document.getElementById('activityRefresh').addEventListener('click', async () => {
   const btn = document.getElementById('activityRefresh');
   btn.classList.add('spinning');
-  await Promise.all([loadBugs(), loadLastActivity()]);
+  await Promise.all([loadBugs(), loadLastActivity(), loadLastDeploy()]);
   btn.classList.remove('spinning');
 });
 
@@ -710,6 +771,7 @@ document.addEventListener('keydown', e => {
   if (authed) {
     await loadBugs();
     await loadLastActivity();
+    await loadLastDeploy();
     startActivityTimers();
   }
 })();
