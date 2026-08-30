@@ -315,9 +315,15 @@ function filteredBugs() {
   const category = document.getElementById('categoryFilter').value;
   return bugs.filter(b => {
     if (category && (b.category || '') !== category) return false;
-    if (q && !b.title.toLowerCase().includes(q) &&
-             !(b.notes || '').toLowerCase().includes(q) &&
-             !(b.steps || '').toLowerCase().includes(q)) return false;
+    if (q) {
+      // "#42", "42" and free text all search; an exact number match wins
+      const needle = q.replace(/^#/, '');
+      const matchesRef = b.ref != null && String(b.ref) === needle;
+      if (!matchesRef &&
+          !b.title.toLowerCase().includes(q) &&
+          !(b.notes || '').toLowerCase().includes(q) &&
+          !(b.steps || '').toLowerCase().includes(q)) return false;
+    }
     return true;
   });
 }
@@ -377,7 +383,10 @@ function bugCard(b) {
     : '';
   return `
     <div class="bug-card" draggable="true" data-id="${escHtml(b.id)}">
-      <div class="bug-title">${escHtml(b.title)}</div>
+      <div class="bug-title">
+        <button type="button" class="bug-ref" data-ref="${escHtml(b.ref ?? '')}" title="Copy #${escHtml(b.ref ?? '')} to clipboard">#${escHtml(b.ref ?? '?')}</button>
+        <span class="bug-title-text">${escHtml(b.title)}</span>
+      </div>
       <div class="bug-meta">
         ${categoryLabel}
         ${b.loe ? `<span class="badge badge-loe loe-${escHtml(String(b.loe).toLowerCase())}">LOE: ${escHtml(b.loe)}</span>` : ''}
@@ -405,17 +414,40 @@ function bugCard(b) {
 // ── Event delegation ──────────────────────────────────────────────────────────
 
 document.getElementById('board').addEventListener('click', e => {
+  const refBtn    = e.target.closest('.bug-ref');
   const editBtn   = e.target.closest('.edit-btn');
   const deleteBtn = e.target.closest('.delete-btn');
+  if (refBtn)    { e.stopPropagation(); copyBugRef(refBtn); return; }
   if (editBtn)   openEditModal(editBtn.dataset.id);
   if (deleteBtn) deleteBug(deleteBtn.dataset.id);
 });
+
+// Tap the number to copy "#42" — the handle you quote when talking to Claude
+async function copyBugRef(btn) {
+  const ref = btn.dataset.ref;
+  if (!ref) return;
+  try {
+    await navigator.clipboard.writeText('#' + ref);
+    const orig = btn.textContent;
+    btn.textContent = 'copied';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1200);
+  } catch {
+    // Clipboard blocked (common in iOS standalone) — select it so it can be
+    // copied by hand rather than failing silently
+    const r = document.createRange();
+    r.selectNodeContents(btn);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(r);
+  }
+}
 
 // Double-click (or double-tap) anywhere on a card opens it for editing
 document.getElementById('board').addEventListener('dblclick', e => {
   const card = e.target.closest('.bug-card');
   if (!card) return;
-  if (e.target.closest('.bug-actions')) return; // buttons/dropdown keep their own behavior
+  if (e.target.closest('.bug-actions, .bug-ref')) return; // these keep their own behavior
   openEditModal(card.dataset.id);
 });
 
@@ -633,6 +665,8 @@ function openEditModal(id) {
   if (!b) return;
   editingBugId = id;
   editingAttachments = Array.isArray(b.attachments) ? [...b.attachments] : [];
+  document.getElementById('editModalTitle').textContent =
+    b.ref != null ? `Edit #${b.ref}` : 'Edit Bug';
   document.getElementById('editTitle').value      = b.title;
   document.getElementById('editCategory').value   = b.category || '';
   document.getElementById('editLoe').value        = b.loe || '';

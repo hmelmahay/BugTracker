@@ -379,7 +379,30 @@ body {
   font-size: 13px;
   margin-bottom: 8px;
   color: var(--text);
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
 }
+
+.bug-title-text { min-width: 0; }
+
+/* The quotable handle — tap to copy "#42" */
+.bug-ref {
+  flex-shrink: 0;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: 5px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  padding: 1px 5px;
+  cursor: pointer;
+  line-height: 1.5;
+}
+.bug-ref:hover  { color: var(--text); border-color: var(--primary); }
+.bug-ref.copied { color: #4ade80; border-color: #14532d; background: #10321e; }
 
 .bug-meta {
   display: flex;
@@ -784,6 +807,8 @@ body {
   .column.mobile-active { display: flex; }
   .column-header { display: none; }
   .column-body { padding: 0 0 32px; gap: 10px; }
+
+  .bug-ref { font-size: 12px; padding: 2px 7px; }
 
   /* Cards: larger text, roomier targets, status dropdown for moving */
   .bug-card { padding: 14px; border-color: var(--border2); }
