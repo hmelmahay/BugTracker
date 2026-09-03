@@ -65,6 +65,12 @@
         <option value="Auth/Login">Auth/Login</option>
         <option value="Other">Other</option>
       </select>
+      <select id="bugAssignee" class="form-select" title="Who owns this card">
+        <option value="">Auto-assign</option>
+        <option value="Steve">Steve</option>
+        <option value="Davis">Davis</option>
+        <option value="Bots">Bots</option>
+      </select>
       <select id="bugStatus" class="form-select">
         <option value="open">Bugs</option>
         <option value="features-open">Features</option>
@@ -101,6 +107,19 @@
       <option value="Navigation">Navigation</option>
       <option value="Auth/Login">Auth/Login</option>
       <option value="Other">Other</option>
+    </select>
+    <select id="assigneeFilter" class="form-select" title="Show only one person's cards">
+      <option value="">Everyone</option>
+      <option value="Steve">Steve</option>
+      <option value="Davis">Davis</option>
+      <option value="Bots">Bots</option>
+      <option value="__none">Unassigned</option>
+    </select>
+    <select id="sortSelect" class="form-select" title="Card order within each column">
+      <option value="created">Oldest first</option>
+      <option value="updated">Recently updated</option>
+      <option value="assignee">By assignee</option>
+      <option value="severity">By severity</option>
     </select>
     <div class="stats-inline">
       <span class="stat-chip"><span class="stat-chip-label">Total</span> <span class="stat-chip-value" id="statTotal">0</span></span>
@@ -214,6 +233,14 @@
             <option value="in-progress">In Progress</option>
             <option value="in-review">Review</option>
             <option value="closed">Closed</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="editAssignee">Assigned to</label>
+          <select id="editAssignee">
+            <option value="Steve">Steve</option>
+            <option value="Davis">Davis</option>
+            <option value="Bots">Bots</option>
           </select>
         </div>
         <div class="field">

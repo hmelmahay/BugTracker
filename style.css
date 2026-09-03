@@ -428,6 +428,13 @@ body {
 .badge-category   { background: #2d1e40; color: #c4b5fd; }
 .badge-reporter   { background: #1e2a20; color: #86efac; }
 
+/* Who owns the card — one colour per person, same three everywhere (HQ too) */
+.badge-assignee                { font-weight: 700; }
+.badge-assignee.assignee-steve { background: #0f2e22; color: #4ade80; border: 1px solid #14532d; }
+.badge-assignee.assignee-davis { background: #0c2a3b; color: #7dd3fc; border: 1px solid #0c4a6e; }
+.badge-assignee.assignee-bots  { background: #1f2937; color: #cbd5e1; border: 1px solid #374151; }
+.badge-assignee.assignee-none  { background: #3b0f0f; color: #fca5a5; border: 1px dashed #7f1d1d; }
+
 /* "updated X ago" — subtle by default, lit up when touched in the last hour */
 .badge-updated {
   background: transparent;
@@ -756,7 +763,7 @@ body {
   /* Toolbar: search + filters stack, stat chips hidden (tabs show counts) */
   .toolbar { flex-wrap: wrap; padding: 8px 14px; gap: 6px; }
   .search-input { flex: 1 1 100%; max-width: none; }
-  .toolbar .form-select { flex: 1; width: auto; min-width: 0; font-size: 14px; padding: 10px 8px; }
+  .toolbar .form-select { flex: 1 1 30%; width: auto; min-width: 0; font-size: 14px; padding: 10px 8px; }
   .stats-inline { display: none; }
 
   /* Status tab bar */

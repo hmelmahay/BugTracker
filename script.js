@@ -19,6 +19,14 @@ const STATUS_LABELS = {
   'closed':        'Closed',
 };
 
+// Every live card belongs to exactly one of these. The database fills a blank
+// from the column (Review -> Steve, Bugs/Features/In Progress -> Bots, Questions
+// -> Steve) and re-derives it when a card changes column, so the board never has
+// to guess — it only has to show it and let you override.
+const ASSIGNEES = ['Steve', 'Davis', 'Bots'];
+const ASSIGNEE_ORDER = { Steve: 0, Davis: 1, Bots: 2 };
+const SEVERITY_ORDER = { Critical: 0, High: 1, Medium: 2, Low: 3 };
+
 // Workflow fields shown as labeled sections on cards (when filled in)
 const CARD_SECTIONS = [
   ['question',      'Question'],
@@ -310,11 +318,30 @@ async function deleteBug(id) {
 
 // ── Render ────────────────────────────────────────────────────────────────────
 
+function assigneeKey(b) {
+  return ASSIGNEES.includes(b.assigned_to) ? b.assigned_to : '';
+}
+
+// Comparators for the Sort control. Each falls back to created order so the
+// board is stable when two cards tie.
+const SORTERS = {
+  created:  (a, b) => (a.created_at || '').localeCompare(b.created_at || ''),
+  updated:  (a, b) => (b.updated_at || b.created_at || '').localeCompare(a.updated_at || a.created_at || ''),
+  assignee: (a, b) => ((ASSIGNEE_ORDER[assigneeKey(a)] ?? 9) - (ASSIGNEE_ORDER[assigneeKey(b)] ?? 9))
+                      || SORTERS.created(a, b),
+  severity: (a, b) => ((SEVERITY_ORDER[a.severity] ?? 9) - (SEVERITY_ORDER[b.severity] ?? 9))
+                      || SORTERS.created(a, b),
+};
+
 function filteredBugs() {
   const q        = document.getElementById('searchInput').value.toLowerCase();
   const category = document.getElementById('categoryFilter').value;
-  return bugs.filter(b => {
+  const assignee = document.getElementById('assigneeFilter').value;
+  const sortKey  = document.getElementById('sortSelect').value;
+  const list = bugs.filter(b => {
     if (category && (b.category || '') !== category) return false;
+    if (assignee === '__none') { if (assigneeKey(b)) return false; }
+    else if (assignee && assigneeKey(b) !== assignee) return false;
     if (q) {
       // "#42", "42" and free text all search; an exact number match wins
       const needle = q.replace(/^#/, '');
@@ -326,10 +353,28 @@ function filteredBugs() {
     }
     return true;
   });
+  return list.sort(SORTERS[sortKey] || SORTERS.created);
+}
+
+// "Davis (4)" in the filter menu: how many live cards each person owns right
+// now, so the count is visible before you filter — and Unassigned shows up
+// only if the database rule ever lets one through.
+function renderAssigneeCounts() {
+  const sel = document.getElementById('assigneeFilter');
+  const live = bugs.filter(b => b.status !== 'closed');
+  for (const opt of sel.options) {
+    if (!opt.value) { opt.textContent = `Everyone (${live.length})`; continue; }
+    const n = opt.value === '__none'
+      ? live.filter(b => !assigneeKey(b)).length
+      : live.filter(b => assigneeKey(b) === opt.value).length;
+    opt.textContent = `${opt.value === '__none' ? 'Unassigned' : opt.value} (${n})`;
+    opt.hidden = opt.value === '__none' && n === 0;
+  }
 }
 
 function renderAll() {
   const list = filteredBugs();
+  renderAssigneeCounts();
 
   // Stats
   document.getElementById('statTotal').textContent      = bugs.length;
@@ -376,6 +421,10 @@ function bugCard(b) {
   const reporterLabel = b.reporter
     ? `<span class="badge badge-reporter">${escHtml(b.reporter)}</span>`
     : '';
+  const owner = assigneeKey(b);
+  const assigneeLabel = owner
+    ? `<span class="badge badge-assignee assignee-${owner.toLowerCase()}" title="Assigned to ${owner}">${owner}</span>`
+    : (b.status === 'closed' ? '' : `<span class="badge badge-assignee assignee-none" title="Nobody owns this yet">Unassigned</span>`);
   const touched      = b.updated_at || b.created_at;
   const isRecent     = touched && (Date.now() - new Date(touched).getTime()) < 3600000;
   const updatedLabel = touched
@@ -388,6 +437,7 @@ function bugCard(b) {
         <span class="bug-title-text">${escHtml(b.title)}</span>
       </div>
       <div class="bug-meta">
+        ${assigneeLabel}
         ${categoryLabel}
         ${b.loe ? `<span class="badge badge-loe loe-${escHtml(String(b.loe).toLowerCase())}">LOE: ${escHtml(b.loe)}</span>` : ''}
         ${reporterLabel}
@@ -586,6 +636,8 @@ document.getElementById('addBugBtn').addEventListener('click', async () => {
     title,
     category:    document.getElementById('bugCategory').value,
     status:      document.getElementById('bugStatus').value,
+    // Blank means "let the column decide" — the database fills it in.
+    assigned_to: document.getElementById('bugAssignee').value || null,
     reporter:    currentUser?.email || '',
     steps:       '',
     notes:       '',
@@ -601,6 +653,7 @@ document.getElementById('addBugBtn').addEventListener('click', async () => {
   document.getElementById('bugTitle').value = '';
   document.getElementById('bugCategory').value  = '';
   document.getElementById('bugStatus').value    = 'open';
+  document.getElementById('bugAssignee').value  = '';
   if (!TOUCH_DEVICE) document.getElementById('bugTitle').focus();
 });
 
@@ -612,6 +665,42 @@ document.getElementById('bugTitle').addEventListener('keydown', e => {
 
 document.getElementById('searchInput').addEventListener('input', renderAll);
 document.getElementById('categoryFilter').addEventListener('change', renderAll);
+
+// The assignee filter and sort stick per device (Davis's phone stays on
+// "Davis"), and can be preset from the URL so Stevo HQ can deep-link straight
+// to one person's cards: ?assignee=Davis, ?sort=assignee, ?ref=42.
+const VIEW_PREFS = 'bugtracker.view';
+
+function loadViewPrefs() {
+  let prefs = {};
+  try { prefs = JSON.parse(localStorage.getItem(VIEW_PREFS) || '{}'); } catch { /* ignore */ }
+  const params = new URLSearchParams(location.search);
+  const assignee = params.get('assignee') ?? prefs.assignee ?? '';
+  const sort     = params.get('sort')     ?? prefs.sort     ?? 'created';
+  const ref      = params.get('ref');
+  const assigneeSel = document.getElementById('assigneeFilter');
+  const sortSel     = document.getElementById('sortSelect');
+  if ([...assigneeSel.options].some(o => o.value === assignee)) assigneeSel.value = assignee;
+  if (SORTERS[sort]) sortSel.value = sort;
+  if (ref) {
+    // A link to one card: show it regardless of who owns it
+    assigneeSel.value = '';
+    document.getElementById('searchInput').value = '#' + ref.replace(/^#/, '');
+  }
+}
+
+function saveViewPrefs() {
+  try {
+    localStorage.setItem(VIEW_PREFS, JSON.stringify({
+      assignee: document.getElementById('assigneeFilter').value,
+      sort:     document.getElementById('sortSelect').value,
+    }));
+  } catch { /* private mode etc. */ }
+}
+
+document.getElementById('assigneeFilter').addEventListener('change', () => { saveViewPrefs(); renderAll(); });
+document.getElementById('sortSelect').addEventListener('change',     () => { saveViewPrefs(); renderAll(); });
+loadViewPrefs();
 
 // ── Drag & drop ───────────────────────────────────────────────────────────────
 
@@ -671,6 +760,7 @@ function openEditModal(id) {
   document.getElementById('editCategory').value   = b.category || '';
   document.getElementById('editLoe').value        = b.loe || '';
   document.getElementById('editStatus').value     = b.status;
+  document.getElementById('editAssignee').value   = assigneeKey(b) || (b.status === 'closed' ? 'Steve' : 'Bots');
   document.getElementById('editReporter').value   = b.reporter   || '';
   document.getElementById('editSteps').value      = b.steps      || '';
   document.getElementById('editNotes').value      = b.notes      || '';
@@ -782,6 +872,7 @@ document.getElementById('editSaveBtn').addEventListener('click', async () => {
     category:    document.getElementById('editCategory').value,
     loe:         document.getElementById('editLoe').value,
     status:      document.getElementById('editStatus').value,
+    assigned_to: document.getElementById('editAssignee').value,
     reporter:    document.getElementById('editReporter').value.trim(),
     steps:       document.getElementById('editSteps').value.trim(),
     notes:       document.getElementById('editNotes').value.trim(),
