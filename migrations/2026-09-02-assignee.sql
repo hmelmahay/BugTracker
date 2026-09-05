@@ -109,3 +109,11 @@ end;
 
 alter table public.bugs enable trigger bugs_set_updated_at;
 alter table public.bugs enable trigger bugs_log_activity;
+
+-- ── 2026-09-05: log_bug_activity attachments fix ─────────────────────────────
+-- `v_changed || 'attachments'` resolved as array || array and tried to parse the
+-- word as an array literal, so EVERY change to bugs.attachments failed with
+-- 22P02 "malformed array literal" -- the board's screenshot upload included.
+-- Applied to the tracker project the same day (typed array_append). Full body of
+-- the fixed function lives in the tracker's migration history:
+-- fix_log_bug_activity_attachments_array_append.
