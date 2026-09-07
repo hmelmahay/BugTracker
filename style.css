@@ -298,7 +298,7 @@ body {
 .board {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 10px;
   padding: 10px 16px 12px;
   overflow: hidden;
@@ -689,7 +689,7 @@ body {
 /* Tablet: keep all 6 columns, let the board scroll sideways */
 @media (min-width: 821px) and (max-width: 1200px) {
   .board {
-    grid-template-columns: repeat(6, minmax(210px, 1fr));
+    grid-template-columns: repeat(7, minmax(200px, 1fr));
     overflow-x: auto;
   }
 }
