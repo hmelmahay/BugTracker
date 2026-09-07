@@ -77,6 +77,7 @@
         <option value="questions">Questions</option>
         <option value="in-progress">In Progress</option>
         <option value="in-review">Review</option>
+        <option value="parked">Parked</option>
         <option value="closed">Closed</option>
       </select>
       <label class="btn btn-outline attach-label" title="Attach screenshots from Photos">
@@ -138,6 +139,7 @@
     <button class="mobile-tab" data-status="questions">Questions <span class="tab-count" id="tab-count-questions">0</span></button>
     <button class="mobile-tab" data-status="in-progress">In Progress <span class="tab-count" id="tab-count-in-progress">0</span></button>
     <button class="mobile-tab" data-status="in-review">Review <span class="tab-count" id="tab-count-in-review">0</span></button>
+    <button class="mobile-tab" data-status="parked">Parked <span class="tab-count" id="tab-count-parked">0</span></button>
     <button class="mobile-tab" data-status="closed">Closed <span class="tab-count" id="tab-count-closed">0</span></button>
   </nav>
 
@@ -177,6 +179,13 @@
         <span class="count" id="count-in-review">0</span>
       </div>
       <div class="column-body" id="col-in-review"></div>
+    </div>
+    <div class="column" data-status="parked">
+      <div class="column-header">
+        <span class="column-title">Parked</span>
+        <span class="count" id="count-parked">0</span>
+      </div>
+      <div class="column-body" id="col-parked"></div>
     </div>
     <div class="column" data-status="closed">
       <div class="column-header">
@@ -232,6 +241,7 @@
             <option value="questions">Questions</option>
             <option value="in-progress">In Progress</option>
             <option value="in-review">Review</option>
+            <option value="parked">Parked</option>
             <option value="closed">Closed</option>
           </select>
         </div>

@@ -8,7 +8,7 @@ let db          = null;
 let bugs        = [];
 let currentUser = null;
 
-const STATUSES = ['open', 'features-open', 'questions', 'in-progress', 'in-review', 'closed'];
+const STATUSES = ['open', 'features-open', 'questions', 'in-progress', 'in-review', 'parked', 'closed'];
 
 const STATUS_LABELS = {
   'open':          'Bugs',
@@ -16,6 +16,7 @@ const STATUS_LABELS = {
   'questions':     'Questions',
   'in-progress':   'In Progress',
   'in-review':     'Review',
+  'parked':        'Parked',
   'closed':        'Closed',
 };
 
